@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 from univo_svis.detection.annotator import Annotator
 from univo_svis.detection.fusion import calculate_compliance
@@ -78,7 +78,9 @@ class VideoWorker(QObject):
         self._paused = False
         self._start_time = time.time()
         self._frame_count = 0
-        self._run_loop()
+
+        # Start the non-blocking loop step
+        QTimer.singleShot(0, self._process_loop_step)
 
     @Slot()
     def pause_monitoring(self) -> None:
@@ -109,38 +111,37 @@ class VideoWorker(QObject):
         self._vest_conf = v_conf
         self._overlap_thr = o_thr
 
-    def _run_loop(self) -> None:
-        """Main processing loop with latest-frame strategy and robust error handling."""
+    @Slot()
+    def _process_loop_step(self) -> None:
+        """Process a single frame and schedule the next one if still running."""
+        if not self._running:
+            return
+
+        if self._paused:
+            QTimer.singleShot(100, self._process_loop_step)
+            return
+
         try:
-            while self._running:
-                if self._paused:
-                    time.sleep(0.1)
-                    continue
+            ret, frame = self._capture.read()
+            if not ret or frame is None:
+                if isinstance(self._source_path, str):
+                    logger.info("End of video file reached")
+                else:
+                    self.error_occurred.emit("Lost connection to camera")
+                self.stop_monitoring()
+                return
 
-                ret, frame = self._capture.read()
-                if not ret or frame is None:
-                    # End of file or connection lost
-                    if isinstance(self._source_path, str):
-                        logger.info("End of video file reached: %s", self._source_path)
-                        self.stop_monitoring()
-                    else:
-                        self.error_occurred.emit("Lost connection to camera")
-                        self.stop_monitoring()
-                    break
-
-                if frame.size == 0:
-                    continue
-
-                # 1. Detection & Fusion
+            if frame.size > 0:
                 self._process_frame(frame)
                 self._update_performance()
                 self._update_status()
 
-                # Manual yield to prevent thread saturation
-                time.sleep(0.001)
+            # Schedule next frame as fast as possible (0ms)
+            QTimer.singleShot(0, self._process_loop_step)
+
         except Exception:
             err_msg = traceback.format_exc()
-            logger.error("Critical error in VideoWorker loop:\n%s", err_msg)
+            logger.error("Critical error in VideoWorker step:\n%s", err_msg)
             self.error_occurred.emit(f"Worker Error: {err_msg.splitlines()[-1]}")
             self.stop_monitoring()
 

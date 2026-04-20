@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QThread, Slot
+from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
@@ -33,6 +33,12 @@ logger = logging.getLogger(__name__)
 
 class LiveMonitorView(QWidget):
     """Dashboard for real-time detection on video streams."""
+
+    # UI -> Worker Signals for thread-safe control
+    request_start = Signal(object, float, float, float)
+    request_pause = Signal()
+    request_resume = Signal()
+    request_stop = Signal()
 
     def __init__(self, config: AppConfig, detector: DualModelDetector) -> None:
         super().__init__()
@@ -178,10 +184,17 @@ class LiveMonitorView(QWidget):
 
     def _connect_signals(self) -> None:
         """Wire worker and UI signals."""
+        # Worker -> UI
         self._worker.frame_ready.connect(self._on_frame_ready)
         self._worker.metrics_ready.connect(self._metrics_panel.update_metrics)
         self._worker.status_updated.connect(self._on_status_updated)
         self._worker.error_occurred.connect(self._on_error_occurred)
+
+        # UI -> Worker (QueuedConnection ensures it runs in worker thread)
+        self.request_start.connect(self._worker.start_monitoring)
+        self.request_pause.connect(self._worker.pause_monitoring)
+        self.request_resume.connect(self._worker.resume_monitoring)
+        self.request_stop.connect(self._worker.stop_monitoring)
 
         # Connect sliders from control_panel back to worker
         self._control_panel._person_conf.valueChanged.connect(self._update_worker_thresholds)
@@ -230,33 +243,31 @@ class LiveMonitorView(QWidget):
         self._worker.update_thresholds(p, v, o)
 
     def _on_start(self) -> None:
-        """Start monitoring from selected source."""
+        """Start monitoring from selected source via Signal."""
         self._lbl_error.clear()
         source = self._source_combo.currentData()
         p = self._control_panel._person_conf.value() / 100.0
         v = self._control_panel._vest_conf.value() / 100.0
         o = self._control_panel._overlap_thr.value() / 100.0
-        self._worker.start_monitoring(source, p, v, o)
+        self.request_start.emit(source, p, v, o)
 
     def _on_pause_resume(self) -> None:
-        """Toggle pause/resume state."""
-        # Simple local toggle check based on button text or better, worker state
-        # Worker emits status so we'll react to that.
+        """Toggle pause/resume state via Signal."""
         state = self._lbl_state.text()
         if "PAUSED" in state:
-            self._worker.resume_monitoring()
+            self.request_resume.emit()
         else:
-            self._worker.pause_monitoring()
+            self.request_pause.emit()
 
     def _on_stop(self) -> None:
-        """Stop processing."""
-        self._worker.stop_monitoring()
+        """Stop processing via Signal."""
+        self.request_stop.emit()
         self._person_viewer.clear()
         self._compliance_viewer.clear()
         self._metrics_panel.reset()
 
     def _on_open_file(self) -> None:
-        """Select a video file and start monitoring."""
+        """Select a video file and start monitoring via Signal."""
         self._lbl_error.clear()
         path, _ = QFileDialog.getOpenFileName(
             self, I18N.get_text("open_dialog_title"), "", "Video Files (*.mp4 *.avi *.mov *.mkv)"
@@ -265,12 +276,12 @@ class LiveMonitorView(QWidget):
             p = self._control_panel._person_conf.value() / 100.0
             v = self._control_panel._vest_conf.value() / 100.0
             o = self._control_panel._overlap_thr.value() / 100.0
-            self._worker.start_monitoring(path, p, v, o)
+            self.request_start.emit(path, p, v, o)
 
     def shutdown(self) -> None:
         """Gracefully close worker and thread."""
         logger.info("LiveMonitorView shutdown initiated")
-        self._worker.stop_monitoring()
+        self.request_stop.emit()
         self._worker_thread.quit()
         self._worker_thread.wait()
 
