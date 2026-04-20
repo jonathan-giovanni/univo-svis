@@ -1,0 +1,40 @@
+app:
+  name: "UNIVO-SVIS"
+  version: "0.1.0"
+  theme: "dark"
+  default_mode: "home"
+
+models:
+  person:
+    type: "ultralytics"
+    weights: "models/yolo/yolo11n.pt"
+    confidence_threshold: 0.35
+    class_filter: "person"
+  vest:
+    type: "ultralytics"
+    weights: "models/custom/best.pt"
+    confidence_threshold: 0.35
+    class_filter: "safety_vest"
+
+fusion:
+  overlap_threshold: 0.30
+
+video:
+  default_camera_index: 0
+  target_fps: 30
+  buffer_size: 1
+
+output:
+  captures_dir: "output/captures"
+  recordings_dir: "output/recordings"
+  logs_dir: "output/logs"
+
+roboflow:
+  enabled: true
+  workspace: "jonathans-workspace-zetah"
+  project: "safety-vest-data-yolo"
+  version: 1
+  app_url: "https://app.roboflow.com/jonathans-workspace-zetah/safety-vest-data-yolo/1"
+  universe_url: "https://universe.roboflow.com/jonathans-workspace-zetah/safety-vest-data-yolo"
+  api_key_env: "ROBOFLOW_API_KEY"
+  auto_download_weights: false

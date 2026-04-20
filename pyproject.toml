@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "univo-svis"
+version = "0.1.0"
+description = "University of Oviedo — Safety Vest Inspection Suite"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+requires-python = ">=3.12"
+authors = [
+    {name = "Jonathan Giovanni"},
+]
+
+dependencies = [
+    "PySide6>=6.6",
+    "ultralytics>=8.0",
+    "opencv-python>=4.8",
+    "PyYAML>=6.0",
+    "pyqtdarktheme>=2.1",
+]
+
+[project.optional-dependencies]
+roboflow = ["roboflow>=1.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+univo-svis = "univo_svis.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
