@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 
 logger = logging.getLogger(__name__)
@@ -15,8 +16,7 @@ def main() -> None:
         from PySide6.QtWidgets import QApplication
     except ImportError:
         print(
-            "[FATAL] PySide6 is not installed. "
-            "Run: pip install -r requirements.txt",
+            "[FATAL] PySide6 is not installed. " "Run: pip install -r requirements.txt",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -35,6 +35,10 @@ def main() -> None:
     app.setApplicationName(config.name)
     app.setApplicationVersion(config.version)
 
+    # 1. Verification Mode Support
+    # If UNIVO_SVIS_VERIFY_STARTUP is set, we close the app automatically after showing the window
+    is_verify_startup = os.environ.get("UNIVO_SVIS_VERIFY_STARTUP") == "1"
+
     # Apply dark theme
     try:
         import qdarktheme
@@ -51,6 +55,12 @@ def main() -> None:
 
     window = MainWindow(config)
     window.show()
+
+    if is_verify_startup:
+        from PySide6.QtCore import QTimer
+
+        logger.info("Startup verification mode active — will auto-close in 1500ms")
+        QTimer.singleShot(1500, app.quit)
 
     logger.info("Application started — entering event loop")
 

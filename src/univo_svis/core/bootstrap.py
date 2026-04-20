@@ -56,9 +56,11 @@ def bootstrap(config_path: str | None = None) -> AppConfig:
     logger.info("=" * 60)
     logger.info("Person model  : %s (%s)", config.person_model.weights, config.person_model.type)
     logger.info("Vest model    : %s (%s)", config.vest_model.weights, config.vest_model.type)
-    logger.info("Confidence    : person=%.2f, vest=%.2f",
-                config.person_model.confidence_threshold,
-                config.vest_model.confidence_threshold)
+    logger.info(
+        "Confidence    : person=%.2f, vest=%.2f",
+        config.person_model.confidence_threshold,
+        config.vest_model.confidence_threshold,
+    )
     logger.info("Overlap thr.  : %.2f", config.fusion.overlap_threshold)
     logger.info("Theme         : %s", config.theme)
     logger.info("Project root  : %s", PROJECT_ROOT)

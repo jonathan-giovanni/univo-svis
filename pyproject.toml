@@ -26,6 +26,8 @@ roboflow = ["roboflow>=1.0"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "black>=23.0",
 ]
 
 [project.scripts]
@@ -37,3 +39,22 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "PL"]
+ignore = ["PLR0913", "PLC0415", "N802"] # Allow some local imports, many args, and PySide overrides
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR2004"] # Magic values are fine in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["univo_svis"]

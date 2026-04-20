@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -84,9 +83,7 @@ class AppConfig:
 def _validate_threshold(value: float, name: str) -> None:
     """Validate that a threshold is within [0.0, 1.0]."""
     if not 0.0 <= value <= 1.0:
-        raise ConfigValidationError(
-            f"Threshold '{name}' must be between 0.0 and 1.0, got {value}"
-        )
+        raise ConfigValidationError(f"Threshold '{name}' must be between 0.0 and 1.0, got {value}")
 
 
 def _parse_model_config(data: dict, name: str) -> ModelConfig:
@@ -102,9 +99,7 @@ def _parse_model_config(data: dict, name: str) -> ModelConfig:
     )
 
     if not config.weights:
-        raise ConfigValidationError(
-            f"Model '{name}' must specify a 'weights' path"
-        )
+        raise ConfigValidationError(f"Model '{name}' must specify a 'weights' path")
 
     _validate_threshold(config.confidence_threshold, f"{name}.confidence_threshold")
 
@@ -116,8 +111,7 @@ def _check_weights_exist(config: ModelConfig, name: str, project_root: Path) -> 
     weights_path = project_root / config.weights
     if not weights_path.exists():
         logger.warning(
-            "Model '%s' weights not found at %s — "
-            "will attempt download or fallback at runtime",
+            "Model '%s' weights not found at %s — " "will attempt download or fallback at runtime",
             name,
             weights_path,
         )
@@ -145,7 +139,7 @@ def load_config(config_path: str, project_root: Path | None = None) -> AppConfig
     if project_root is None:
         project_root = config_file.parent.parent
 
-    with open(config_file, "r", encoding="utf-8") as f:
+    with open(config_file, encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     if not raw or not isinstance(raw, dict):
@@ -159,12 +153,8 @@ def load_config(config_path: str, project_root: Path | None = None) -> AppConfig
     if not models_section:
         raise ConfigValidationError("'models' section is required in config")
 
-    person_model = _parse_model_config(
-        models_section.get("person", {}), "person"
-    )
-    vest_model = _parse_model_config(
-        models_section.get("vest", {}), "vest"
-    )
+    person_model = _parse_model_config(models_section.get("person", {}), "person")
+    vest_model = _parse_model_config(models_section.get("vest", {}), "vest")
 
     # Check weights existence (warn only, don't crash)
     _check_weights_exist(person_model, "person", project_root)
@@ -172,9 +162,7 @@ def load_config(config_path: str, project_root: Path | None = None) -> AppConfig
 
     # Parse fusion section
     fusion_section = raw.get("fusion", {})
-    fusion = FusionConfig(
-        overlap_threshold=float(fusion_section.get("overlap_threshold", 0.30))
-    )
+    fusion = FusionConfig(overlap_threshold=float(fusion_section.get("overlap_threshold", 0.30)))
     _validate_threshold(fusion.overlap_threshold, "fusion.overlap_threshold")
 
     # Parse video section

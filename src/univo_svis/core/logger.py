@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -53,6 +52,4 @@ def setup_logging(log_dir: str = "output/logs", level: str = "INFO") -> None:
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("PIL").setLevel(logging.WARNING)
 
-    logging.getLogger(__name__).info(
-        "Logging initialized — level=%s, file=%s", level, log_file
-    )
+    logging.getLogger(__name__).info("Logging initialized — level=%s, file=%s", level, log_file)

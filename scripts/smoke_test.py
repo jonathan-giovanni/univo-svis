@@ -16,8 +16,16 @@ def test_imports():
     from univo_svis.core.config import load_config, AppConfig
     from univo_svis.core.logger import setup_logging
     from univo_svis.core.bootstrap import bootstrap
+    
+    # Phase 1 Detection Modules
+    from univo_svis.detection.entities import BBox, Detection
+    from univo_svis.detection.fusion import calculate_compliance
+    from univo_svis.detection.detector import DualModelDetector
+    from univo_svis.detection.annotator import Annotator
+    from univo_svis.detection.image_analysis import run_static_analysis
+    
     print(f"  ✓ univo_svis v{univo_svis.__version__}")
-    print("  ✓ All core imports successful")
+    print("  ✓ All core and detection imports successful")
 
 
 def test_config_loading():
