@@ -155,13 +155,11 @@ class VideoWorker(QObject):
             compliance = calculate_compliance(persons, vests, self._overlap_thr)
 
             # 2. Annotation
-            # Left Panel: Person only
-            person_img = frame.copy()
-            self._annotator.annotate_persons(person_img, persons)
+            # Left Panel: Person only (Annotator returns a new copy)
+            person_img = self._annotator.annotate_persons(frame, persons)
 
-            # Right Panel: Fused Compliance
-            compliance_img = frame.copy()
-            self._annotator.annotate_compliance(compliance_img, compliance)
+            # Right Panel: Fused Compliance (Annotator returns a new copy)
+            compliance_img = self._annotator.annotate_compliance(frame, compliance)
 
             # 3. Signals
             self.frame_ready.emit(person_img, compliance_img)

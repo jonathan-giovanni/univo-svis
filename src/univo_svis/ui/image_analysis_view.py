@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 )
 
 from univo_svis.core.i18n import I18N, Language
-from univo_svis.detection.annotator import Annotator
 from univo_svis.detection.detector import DualModelDetector
 from univo_svis.detection.image_analysis import run_static_analysis
 from univo_svis.ui.widgets.control_panel import ControlPanel
@@ -182,12 +181,15 @@ class ImageAnalysisView(QWidget):
             result.total_persons, result.compliant_count, result.non_compliant_count
         )
 
-        # 2. Annotators
-        person_only_img = Annotator.draw_persons(self._current_image, result.persons)
-        compliance_img = Annotator.draw_compliance(self._current_image, result.compliance)
+        # 2. Annotation
+        # Left Panel: Person only
+        person_img = self._annotator.annotate_persons(self._current_image, result.persons)
+
+        # Right Panel: Fused Compliance
+        compliance_img = self._annotator.annotate_compliance(self._current_image, result.compliance)
 
         # 3. Display
-        self._person_viewer.setPixmap(self._cv_to_pixmap(person_only_img))
+        self._person_viewer.setPixmap(self._cv_to_pixmap(person_img))
         self._compliance_viewer.setPixmap(self._cv_to_pixmap(compliance_img))
 
         # Store for saving

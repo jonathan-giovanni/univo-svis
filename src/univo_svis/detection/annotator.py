@@ -19,7 +19,7 @@ class Annotator:
     }
 
     @classmethod
-    def draw_persons(cls, image: np.ndarray, persons: list[Detection]) -> np.ndarray:
+    def annotate_persons(cls, image: np.ndarray, persons: list[Detection]) -> np.ndarray:
         """Draw only person detections on the image (for Left Panel)."""
         canvas = image.copy()
         color = cls.COLORS["person"]
@@ -30,7 +30,7 @@ class Annotator:
         return canvas
 
     @classmethod
-    def draw_compliance(cls, image: np.ndarray, results: list[ComplianceResult]) -> np.ndarray:
+    def annotate_compliance(cls, image: np.ndarray, results: list[ComplianceResult]) -> np.ndarray:
         """Draw compliance results on the image (for Right Panel)."""
         canvas = image.copy()
 
