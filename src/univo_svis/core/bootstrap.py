@@ -6,13 +6,13 @@ import logging
 import sys
 from pathlib import Path
 
-from univo_svis.infrastructure.config.yaml_config_loader import AppConfig, load_config
-from univo_svis.infrastructure.logging.logger_factory import setup_logging
+from univo_svis.core.config import AppConfig, load_config
+from univo_svis.core.logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
-# Project root is two levels up from this file (src/univo_svis/bootstrap.py → project root)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+# Project root is three levels up from this file (src/univo_svis/core/bootstrap.py → project root)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "app.yaml"
 
