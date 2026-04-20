@@ -3,7 +3,7 @@ PySide6>=6.6
 ultralytics>=8.0
 opencv-python>=4.8
 PyYAML>=6.0
-pyqtdarktheme>=2.1
+pyqtdarktheme>=0.1.6
 
 # Optional: Roboflow API fallback for vest model
 # roboflow>=1.0
