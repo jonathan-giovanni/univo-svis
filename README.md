@@ -11,90 +11,66 @@ A professional desktop computer vision application that detects persons and safe
 | `yolo11n.pt` | Person detection | Ultralytics pretrained (COCO) |
 | `best.pt` | Safety vest detection | Custom Roboflow-trained ([safety-vest-data-yolo](https://app.roboflow.com/jonathans-workspace-zetah/safety-vest-data-yolo/1)) |
 
+**Overlap Rule**: `overlap = intersection_area(person_box, vest_box) / vest_box_area`. Default: `0.30`.
+
 ## Quick Start
-
-### Prerequisites
-
-- Python 3.12+
-- macOS / Linux / Windows
 
 ### Setup
 
 ```bash
-# Clone the repository
+# Clone and enter repo
 git clone https://github.com/jonathan-giovanni/univo-svis.git
 cd univo-svis
 
 # Create virtual environment and install dependencies
 python3.12 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# (Optional) Install Roboflow fallback support
-pip install roboflow
 ```
-
-### Configuration
-
-Edit `config/app.yaml` to adjust:
-- Model paths and confidence thresholds
-- Overlap threshold for vest detection fusion
-- Video capture settings
-- Output directories
-
-### Model Setup
-
-1. **Person model**: Place `yolo11n.pt` in `models/yolo/` (auto-downloads on first run)
-2. **Vest model**: Place your trained `best.pt` in `models/custom/`
-   - Fallback: Set `ROBOFLOW_API_KEY` environment variable for hosted inference
 
 ### Running
 
 ```bash
-# Activate virtual environment
-source .venv/bin/activate
-
-# Run the application
+# Standard run
 PYTHONPATH=src python -m univo_svis.main
 
-# Or use the dev launcher
+# Fast dev run (MacOS)
 python scripts/run_dev.py
 ```
 
-### Testing
+## Keyboard Shortcuts (Live Monitor)
 
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run smoke test
-python scripts/smoke_test.py
-```
+| Key | Action |
+|-----|--------|
+| `O` / `V` | Open Image or Video File |
+| `W` | Open Webcam |
+| `Space` | Pause / Resume monitoring |
+| `C` | Capture single annotated frame |
+| `R` | Start / Stop Video Recording |
+| `H` | Toggle Help Overlay |
+| `Esc` / `Q` | Stop monitoring / Leave mode |
 
 ## Project Structure
 
 ```
 univo-svis/
-├── config/          # Application configuration (YAML)
-├── src/univo_svis/  # Source code
-│   ├── presentation/    # UI layer (PySide6)
-│   ├── application/     # Service/orchestration layer
-│   ├── domain/          # Business logic and entities
-│   └── infrastructure/  # YOLO, OpenCV, config, logging
-├── tests/           # Unit and integration tests
-├── models/          # YOLO model weights (.gitignored)
-├── output/          # Captures, recordings, logs
-├── scripts/         # Dev utilities
-└── docs/            # Documentation
+├── src/univo_svis/
+│   ├── core/           # Configuration, i18n, logging, bootstrap
+│   ├── detection/      # YOLO detector, fusion, annotator, video worker
+│   └── ui/             # PySide6 views and custom widgets
+├── tests/              # Unit and integration tests
+├── models/             # YOLO weights (yolo11n.pt, best.pt)
+├── output/             # Captures, recordings, logs
+├── scripts/            # Dev utilities (verify.sh, run_dev.py)
+└── config/             # YAML configuration
 ```
 
 ## Tech Stack
 
-- **Python 3.12** — Language
-- **PySide6** — Desktop GUI framework
-- **Ultralytics YOLO** — Object detection
-- **OpenCV** — Image/video processing
-- **PyYAML** — Configuration
+- **Python 3.12** — Modern type-hinted core
+- **PySide6 (Qt)** — Premium responsive GUI
+- **Ultralytics YOLO11** — State-of-the-art object detection
+- **OpenCV** — Professional media processing
 
 ## License
 

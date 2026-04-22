@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QThread, Signal, Slot
+from PySide6.QtCore import Qt, QThread, Signal, Slot
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
@@ -39,6 +39,9 @@ class LiveMonitorView(QWidget):
     request_pause = Signal()
     request_resume = Signal()
     request_stop = Signal()
+    request_capture = Signal(str)
+    request_record_start = Signal(str)
+    request_record_stop = Signal()
 
     def __init__(self, config: AppConfig, detector: DualModelDetector) -> None:
         super().__init__()
@@ -52,6 +55,11 @@ class LiveMonitorView(QWidget):
 
         self._setup_ui()
         self._connect_signals()
+
+        # Phase 3: Help Overlay & Shortcuts
+        self._help_visible = False
+        self._help_overlay = self._create_help_overlay()
+        self._help_overlay.hide()
 
         # Connect to i18n
         I18N.language_changed.connect(self._on_language_changed)
@@ -105,6 +113,9 @@ class LiveMonitorView(QWidget):
         self._lbl_source = QLabel()
         self._lbl_state = QLabel()
         self._lbl_vest_status = QLabel()
+        self._lbl_rec = QLabel("● REC")
+        self._lbl_rec.setStyleSheet("color: #FF5252; font-weight: bold; font-size: 11px;")
+        self._lbl_rec.hide()
         self._lbl_error = QLabel()
         self._lbl_error.setStyleSheet("color: #F44336; font-weight: bold; font-size: 11px;")
 
@@ -113,9 +124,10 @@ class LiveMonitorView(QWidget):
             self._lbl_source,
             self._lbl_state,
             self._lbl_vest_status,
+            self._lbl_rec,
             self._lbl_error,
         ]:
-            if lbl != self._lbl_error:
+            if lbl not in [self._lbl_error, self._lbl_rec]:
                 lbl.setStyleSheet("color: #B0BEC5; font-size: 11px;")
             layout.addWidget(lbl)
             layout.addSpacing(20)
@@ -164,18 +176,26 @@ class LiveMonitorView(QWidget):
         self._btn_start = QPushButton()
         self._btn_pause = QPushButton()
         self._btn_stop = QPushButton()
+        self._btn_capture = QPushButton()
+        self._btn_record = QPushButton()
 
         self._btn_start.setStyleSheet("background-color: #00BCD4; color: white; font-weight: bold;")
         self._btn_pause.setStyleSheet("background-color: #455A64; color: white;")
         self._btn_stop.setStyleSheet("background-color: #C62828; color: white;")
+        self._btn_capture.setStyleSheet("background-color: #455A64; color: white;")
+        self._btn_record.setStyleSheet("background-color: #455A64; color: white;")
 
         self._btn_start.clicked.connect(self._on_start)
         self._btn_pause.clicked.connect(self._on_pause_resume)
         self._btn_stop.clicked.connect(self._on_stop)
+        self._btn_capture.clicked.connect(self._on_capture)
+        self._btn_record.clicked.connect(self._on_record_toggle)
 
         action_row.addWidget(self._btn_start)
         action_row.addWidget(self._btn_pause)
         action_row.addWidget(self._btn_stop)
+        action_row.addWidget(self._btn_capture)
+        action_row.addWidget(self._btn_record)
         playback_layout.addLayout(action_row)
 
         main_layout.addLayout(playback_layout, stretch=1)
@@ -195,6 +215,9 @@ class LiveMonitorView(QWidget):
         self.request_pause.connect(self._worker.pause_monitoring)
         self.request_resume.connect(self._worker.resume_monitoring)
         self.request_stop.connect(self._worker.stop_monitoring)
+        self.request_capture.connect(self._worker.request_capture)
+        self.request_record_start.connect(self._worker.start_recording)
+        self.request_record_stop.connect(self._worker.stop_recording)
 
         # Connect sliders from control_panel back to worker
         self._control_panel._person_conf.valueChanged.connect(self._update_worker_thresholds)
@@ -228,6 +251,14 @@ class LiveMonitorView(QWidget):
         is_paused = status["state"] == "PAUSED"
         btn_text = I18N.get_text("btn_resume") if is_paused else I18N.get_text("btn_pause")
         self._btn_pause.setText(btn_text)
+
+        # Update Recording UI
+        is_recording = status.get("is_recording", False)
+        self._lbl_rec.setVisible(is_recording)
+        record_btn_text = (
+            I18N.get_text("btn_record_stop") if is_recording else I18N.get_text("btn_record_start")
+        )
+        self._btn_record.setText(record_btn_text)
 
     @Slot(str)
     def _on_error_occurred(self, message: str) -> None:
@@ -265,6 +296,19 @@ class LiveMonitorView(QWidget):
         self._person_viewer.clear()
         self._compliance_viewer.clear()
         self._metrics_panel.reset()
+        self._lbl_rec.hide()
+
+    def _on_capture(self) -> None:
+        """Request a frame capture."""
+        self.request_capture.emit(self._config.output.captures_dir)
+        self._lbl_error.setText(I18N.get_text("status_captured"))
+
+    def _on_record_toggle(self) -> None:
+        """Toggle recording state."""
+        if self._lbl_rec.isVisible():
+            self.request_record_stop.emit()
+        else:
+            self.request_record_start.emit(self._config.output.recordings_dir)
 
     def _on_open_file(self) -> None:
         """Select a video file and start monitoring via Signal."""
@@ -286,12 +330,84 @@ class LiveMonitorView(QWidget):
         self._worker_thread.wait()
 
     def _on_language_changed(self, lang: Language) -> None:
-        """Handle language change."""
+        """Refresh UI on language change."""
         self._retranslate_ui()
 
     def _retranslate_ui(self) -> None:
-        """Update translations."""
+        """Update localized text for all UI elements."""
         self._btn_file.setText(I18N.get_text("btn_open_video"))
         self._btn_start.setText(I18N.get_text("btn_start"))
-        # self._btn_pause handled in status update
         self._btn_stop.setText(I18N.get_text("btn_stop"))
+        self._btn_capture.setText(I18N.get_text("btn_capture"))
+
+        # Update record button text based on state
+        is_recording = self._lbl_rec.isVisible()
+        record_key = "btn_record_stop" if is_recording else "btn_record_start"
+        self._btn_record.setText(I18N.get_text(record_key))
+
+        self._source_combo.setItemText(0, "Webcam 0")
+        self._source_combo.setItemText(1, "Webcam 1")
+        self._source_combo.setItemText(2, "Webcam 2")
+
+        if hasattr(self, "_help_overlay"):
+            self._help_title.setText(I18N.get_text("help_title"))
+            self._help_text.setText(I18N.get_text("help_shortcuts"))
+
+        # Refresh indicators
+        self._lbl_fps.setText(I18N.get_text("live_status_fps"))
+        self._lbl_source.setText(I18N.get_text("live_status_source"))
+        self._lbl_state.setText(I18N.get_text("live_status_state"))
+        self._lbl_vest_status.setText(I18N.get_text("live_status_vest"))
+
+    def _create_help_overlay(self) -> QFrame:
+        """Create a translucent help panel for shortcuts."""
+        overlay = QFrame(self)
+        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 210); border-radius: 10px;")
+        layout = QVBoxLayout(overlay)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self._help_title = QLabel(I18N.get_text("help_title"))
+        self._help_title.setStyleSheet("color: #00BCD4; font-size: 24px; font-weight: bold;")
+        self._help_text = QLabel(I18N.get_text("help_shortcuts"))
+        self._help_text.setStyleSheet("color: white; font-size: 16px; line-height: 1.6;")
+        self._help_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(self._help_title)
+        layout.addSpacing(25)
+        layout.addWidget(self._help_text)
+
+        # Close hint
+        close_hint = QLabel("(Press H to close)")
+        close_hint.setStyleSheet("color: #78909C; font-size: 12px; margin-top: 20px;")
+        layout.addWidget(close_hint, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        return overlay
+
+    def resizeEvent(self, event) -> None:
+        """Ensure help overlay covers the whole view."""
+        super().resizeEvent(event)
+        if hasattr(self, "_help_overlay"):
+            self._help_overlay.setGeometry(self.rect())
+
+    def keyPressEvent(self, event) -> None:
+        """Handle keyboard shortcuts for Phase 3."""
+        key = event.key()
+
+        if key == Qt.Key.Key_H:
+            self._help_visible = not self._help_visible
+            self._help_overlay.setVisible(self._help_visible)
+            self._help_overlay.raise_()
+        elif key == Qt.Key.Key_Space:
+            self._on_pause_resume()
+        elif key == Qt.Key.Key_C:
+            self._on_capture()
+        elif key == Qt.Key.Key_R:
+            self._on_record_toggle()
+        elif key in (Qt.Key.Key_O, Qt.Key.Key_V):
+            self._on_open_file()
+        elif key == Qt.Key.Key_W:
+            self._on_start()
+        elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Q):
+            self._on_stop()
+        else:
+            super().keyPressEvent(event)

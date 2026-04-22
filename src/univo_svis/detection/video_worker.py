@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
+import os
 import time
 import traceback
 from typing import TYPE_CHECKING
@@ -49,6 +51,12 @@ class VideoWorker(QObject):
         self._fps = 0.0
         self._frame_count = 0
         self._start_time = 0.0
+
+        # Recording & Capture
+        self._recorder: cv2.VideoWriter | None = None
+        self._is_recording = False
+        self._capture_requested = False
+        self._output_dir = ""
 
         # Thresholds
         self._person_conf = 0.35
@@ -111,6 +119,28 @@ class VideoWorker(QObject):
         self._vest_conf = v_conf
         self._overlap_thr = o_thr
 
+    @Slot(str)
+    def start_recording(self, output_dir: str) -> None:
+        """Enable video recording of the compliance panel."""
+        self._output_dir = output_dir
+        self._is_recording = True
+        logger.info("Recording enabled")
+
+    @Slot()
+    def stop_recording(self) -> None:
+        """Disable and finalize video recording."""
+        self._is_recording = False
+        if self._recorder:
+            self._recorder.release()
+            self._recorder = None
+        logger.info("Recording stopped")
+
+    @Slot(str)
+    def request_capture(self, output_dir: str) -> None:
+        """Request a single frame capture on the next processing step."""
+        self._output_dir = output_dir
+        self._capture_requested = True
+
     @Slot()
     def _process_loop_step(self) -> None:
         """Process a single frame and schedule the next one if still running."""
@@ -162,7 +192,14 @@ class VideoWorker(QObject):
             # Right Panel: Fused Compliance (Annotator returns a new copy)
             compliance_img = self._annotator.annotate_compliance(frame, compliance)
 
-            # 3. Signals
+            # 3. Recording & Capture (Annotated Compliance Output)
+            if self._is_recording:
+                self._handle_recording(compliance_img)
+
+            if self._capture_requested:
+                self._handle_capture(compliance_img)
+
+            # 4. Signals
             self.frame_ready.emit(person_img, compliance_img)
 
             compliant_count = sum(1 for c in compliance if c.has_vest)
@@ -198,5 +235,29 @@ class VideoWorker(QObject):
             "source": str(self._source_path),
             "state": state,
             "vest_status": vest_status,
+            "is_recording": self._is_recording,
         }
         self.status_updated.emit(status)
+
+    def _handle_recording(self, img: np.ndarray) -> None:
+        """Lazily initialize and write to video recorder."""
+        if self._recorder is None:
+            h, w = img.shape[:2]
+            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(self._output_dir, f"record_{ts}.avi")
+            os.makedirs(self._output_dir, exist_ok=True)
+
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")
+            self._recorder = cv2.VideoWriter(filename, fourcc, 20.0, (w, h))
+
+        if self._recorder:
+            self._recorder.write(img)
+
+    def _handle_capture(self, img: np.ndarray) -> None:
+        """Save a single high-quality frame."""
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(self._output_dir, f"capture_{ts}.jpg")
+        os.makedirs(self._output_dir, exist_ok=True)
+        cv2.imwrite(filename, img)
+        self._capture_requested = False
+        logger.info("Frame captured to %s", filename)

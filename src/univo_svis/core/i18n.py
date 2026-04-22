@@ -63,6 +63,22 @@ class I18nService(QObject):
             "btn_pause": "PAUSE",
             "btn_resume": "RESUME",
             "btn_stop": "STOP",
+            "btn_capture": "CAPTURE FRAME",
+            "btn_record_start": "START RECORDING",
+            "btn_record_stop": "STOP RECORDING",
+            "help_title": "Shortcuts & Help",
+            "help_shortcuts": (
+                "O: Open Image\n"
+                "V: Open Video\n"
+                "W: Open Webcam\n"
+                "Space: Pause/Resume\n"
+                "C: Capture Frame\n"
+                "R: Start/Stop Recording\n"
+                "H: Toggle Help\n"
+                "Esc: Stop/Leave"
+            ),
+            "status_recording": "RECORDING",
+            "status_captured": "Frame saved to output/captures",
         },
         Language.ES: {
             "app_name": "UNIVO-SVIS",
@@ -103,6 +119,22 @@ class I18nService(QObject):
             "btn_pause": "PAUSAR",
             "btn_resume": "REANUDAR",
             "btn_stop": "DETENER",
+            "btn_capture": "CAPTURAR FRAME",
+            "btn_record_start": "INICIAR GRABACIÓN",
+            "btn_record_stop": "DETENER GRABACIÓN",
+            "help_title": "Atajos y Ayuda",
+            "help_shortcuts": (
+                "O: Abrir Imagen\n"
+                "V: Abrir Video\n"
+                "W: Abrir Cámara\n"
+                "Espacio: Pausar/Reanudar\n"
+                "C: Capturar Frame\n"
+                "R: Iniciar/Detener Grabación\n"
+                "H: Alternar Ayuda\n"
+                "Esc: Detener/Salir"
+            ),
+            "status_recording": "GRABANDO",
+            "status_captured": "Imagen guardada en output/captures",
         },
     }
 
