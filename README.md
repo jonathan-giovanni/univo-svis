@@ -2,76 +2,59 @@
 
 **University of Oviedo — Safety Vest Inspection Suite**
 
-A professional desktop computer vision application that detects persons and safety vests in images and video streams, determining compliance using bounding box overlap analysis.
+## What the app does
+This is a professional computer vision application designed to enforce safety compliance. It detects persons and safety vests in images and real-time video streams, automatically determining who is not wearing a vest based on a spatial overlap analysis. It tracks compliance totals, supports visual inspection modes, and allows for evidence capture and recording.
 
-## Model Architecture
+## Requirements
+- Python 3.12+
+- A standard Python Virtual Environment (`venv`)
+- Core dependencies: `PySide6`, `ultralytics`, `opencv-python`
+- The custom local vest model weights must be placed at `models/custom/best.pt`
+- *(Optional)* A Roboflow API key configured as `ROBOFLOW_API_KEY` in your environment (if relying on the Roboflow API model instead of local weights)
 
-| Model | Purpose | Source |
-|-------|---------|--------|
-| `yolo11n.pt` | Person detection | Ultralytics pretrained (COCO) |
-| `best.pt` | Safety vest detection | Custom Roboflow-trained ([safety-vest-data-yolo](https://app.roboflow.com/jonathans-workspace-zetah/safety-vest-data-yolo/1)) |
+## Setup Steps
+1. **Clone the repository and enter the directory**:
+   ```bash
+   git clone https://github.com/jonathan-giovanni/univo-svis.git
+   cd univo-svis
+   ```
+2. **Create and activate a virtual environment**:
+   ```bash
+   python3.12 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Place the vest model**:
+   Ensure your local student-trained weights file is placed at: `models/custom/best.pt`
+5. **Set up API Fallback (Optional)**:
+   If you wish to use the API mode, set your key:
+   ```bash
+   export ROBOFLOW_API_KEY="your_api_key_here"
+   ```
 
-**Overlap Rule**: `overlap = intersection_area(person_box, vest_box) / vest_box_area`. Default: `0.30`.
-
-## Quick Start
-
-### Setup
-
+## How to run the app
+Start the application by running the provided dev script:
 ```bash
-# Clone and enter repo
-git clone https://github.com/jonathan-giovanni/univo-svis.git
-cd univo-svis
-
-# Create virtual environment and install dependencies
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Running
-
-```bash
-# Standard run
-PYTHONPATH=src python -m univo_svis.main
-
-# Fast dev run (MacOS)
 python scripts/run_dev.py
 ```
+*(Alternatively: `PYTHONPATH=src python -m univo_svis.main`)*
 
-## Keyboard Shortcuts (Live Monitor)
+## How to use the app
+1. **Choose your Vest Model Source** in the top navigation panel:
+   - **Local Model**: Uses your provided `best.pt` local weights.
+   - **Roboflow API**: Connects securely to the Cloud-hosted version.
+2. Select **Image Analysis** or **Live Monitor** from the Home screen.
+3. Once in the workspace, use the **File** menu to **Open Image**, **Open Video**, or **Open Webcam**.
+4. Adjust the confidence and threshold sliders if necessary.
+5. In Image mode: Click **Process** to trigger detection and see the detailed analysis.
+6. In Live mode: Read the real-time compliance tallies directly from the console. You can **Pause**, **Record**, and **Capture** streams interactively.
 
-| Key | Action |
-|-----|--------|
-| `O` / `V` | Open Image or Video File |
-| `W` | Open Webcam |
-| `Space` | Pause / Resume monitoring |
-| `C` | Capture single annotated frame |
-| `R` | Start / Stop Video Recording |
-| `H` | Toggle Help Overlay |
-| `Esc` / `Q` | Stop monitoring / Leave mode |
+## Final Model Source Explanation
+This application strictly adheres to a robust Dual-Model paradigm. It pairs a foundational Ultralytics YOLOv11 person detector (`yolo11n.pt`) alongside a specialized Safety Vest detector. 
 
-## Project Structure
-
-```
-univo-svis/
-├── src/univo_svis/
-│   ├── core/           # Configuration, i18n, logging, bootstrap
-│   ├── detection/      # YOLO detector, fusion, annotator, video worker
-│   └── ui/             # PySide6 views and custom widgets
-├── tests/              # Unit and integration tests
-├── models/             # YOLO weights (yolo11n.pt, best.pt)
-├── output/             # Captures, recordings, logs
-├── scripts/            # Dev utilities (verify.sh, run_dev.py)
-└── config/             # YAML configuration
-```
-
-## Tech Stack
-
-- **Python 3.12** — Modern type-hinted core
-- **PySide6 (Qt)** — Premium responsive GUI
-- **Ultralytics YOLO11** — State-of-the-art object detection
-- **OpenCV** — Professional media processing
-
-## License
-
-GPL-3.0-or-later
+For the vest detector, you can dynamically toggle between two sources in the UI:
+- **Local Model**: A student-trained YOLOv11 checkpoint directly integrated via local inference (highly recommended for performance). 
+- **Roboflow API Mode**: Remote inference tied to the exact underlying dataset project (`safety-vest-data-yolo`, version `1`).

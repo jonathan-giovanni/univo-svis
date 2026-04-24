@@ -30,34 +30,51 @@ class DualModelDetector:
         logger.info("Initializing Person Model with: %s", person_weights)
         self._person_model = YOLO(person_weights)
 
-        # 2. Initialize Vest Model (Local vs API)
-        self._vest_mode = resolver.get_inference_mode()
+        # 2. Vest Model is lazy-initialized or initialized by set_vest_mode
         self._vest_model_local = None
         self._vest_model_api = None
+        
+        # Start by explicitly setting the mode based on resolver default
+        self.set_vest_mode(resolver.get_inference_mode())
 
-        if self._vest_mode == "local":
-            logger.info("Initializing Vest Model (Local) with: %s", resolver.get_local_path())
-            self._vest_model_local = YOLO(resolver.get_local_path())
-        elif self._vest_mode == "api":
-            logger.info("Initializing Vest Model (API Fallback via Roboflow)")
-            try:
-                from roboflow import Roboflow
-
-                rf = Roboflow(api_key=resolver._api_key)
-                project = rf.workspace(resolver._workspace).project(resolver._project)
-                self._vest_model_api = project.version(resolver._version).model
-            except ImportError:
-                logger.error("Roboflow package not installed. API fallback disabled.")
-                self._vest_mode = "none"
-            except Exception as e:
-                logger.error("Failed to initialize Roboflow API: %s", e)
-                self._vest_mode = "none"
+    def set_vest_mode(self, mode: str) -> None:
+        """Force the vest mode to Local or API."""
+        if mode == "local":
+            if self._resolver.has_local_weights:
+                if self._vest_model_local is None:
+                    logger.info("Initializing Vest Model (Local) with: %s", self._resolver.get_local_path())
+                    self._vest_model_local = YOLO(self._resolver.get_local_path())
+                self._vest_mode = "local"
+            else:
+                logger.warning("Requested local mode but weights are missing.")
+                self._vest_mode = "local_error"
+        elif mode == "api":
+            if self._resolver.can_use_api:
+                if self._vest_model_api is None:
+                    logger.info("Initializing Vest Model (API via Roboflow)")
+                    try:
+                        from roboflow import Roboflow
+                        rf = Roboflow(api_key=self._resolver._api_key)
+                        project = rf.workspace(self._resolver._workspace).project(self._resolver._project)
+                        self._vest_model_api = project.version(self._resolver._version).model
+                        self._vest_mode = "api"
+                    except ImportError:
+                        logger.error("Roboflow package not installed. API fallback disabled.")
+                        self._vest_mode = "api_error"
+                    except Exception as e:
+                        logger.error("Failed to initialize Roboflow API: %s", e)
+                        self._vest_mode = "api_error"
+                else:
+                    self._vest_mode = "api"
+            else:
+                logger.warning("Requested API mode but key is missing.")
+                self._vest_mode = "api_error"
         else:
-            logger.warning("No vest model available (local or API)")
+            self._vest_mode = "none"
 
     @property
     def vest_mode(self) -> str:
-        """Get the current vest deduction mode (local, api, none)."""
+        """Get the current vest deduction mode (local, api, none, or error states)."""
         return self._vest_mode
 
     @property

@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from univo_svis.core.i18n import I18N, Language
+from univo_svis.detection.annotator import Annotator
 from univo_svis.detection.detector import DualModelDetector
 from univo_svis.detection.image_analysis import run_static_analysis
 from univo_svis.ui.widgets.control_panel import ControlPanel
@@ -41,6 +42,7 @@ class ImageAnalysisView(QWidget):
         self._detector = detector
         self._current_image: np.ndarray | None = None
         self._current_path: str | None = None
+        self._annotator = Annotator()
 
         self._setup_ui()
 

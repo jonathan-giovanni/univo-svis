@@ -95,3 +95,7 @@ dmypy.json
 # Cursor
 .cursorignore
 .cursorindexingignore
+training_runs/
+runs/
+yolo*.pt
+

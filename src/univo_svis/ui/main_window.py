@@ -45,14 +45,14 @@ class MainWindow(QMainWindow):
         self._config = config
 
         # Initialize shared resolver and detector
-        resolver = RoboflowResolver(
+        self._resolver = RoboflowResolver(
             local_weights=config.vest_model.weights,
             workspace=config.roboflow.workspace,
             project=config.roboflow.project,
             version=config.roboflow.version,
             project_root=Path("."),
         )
-        self._detector = DualModelDetector(self._config, resolver)
+        self._detector = DualModelDetector(self._config, self._resolver)
 
         self._setup_window()
         self._setup_status_bar()
@@ -145,6 +145,19 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(self._lang_selector)
 
         main_layout.addWidget(header)
+        
+        # 1.5. Vest Source Selector Panel
+        # Re-resolve the correct config resolver reference so we can pass it
+        from univo_svis.ui.widgets.model_source_panel import ModelSourcePanel
+        
+        # We need to reconstruct the resolver to pass it, or just pass the detector's internals
+        # actually MainWindow initialized resolver in __init__
+        self._source_panel = ModelSourcePanel(self._detector, self._resolver)
+        # Add a wrapper layout so it doesn't span full width awkwardly, or let it span
+        panel_layout = QHBoxLayout()
+        panel_layout.setContentsMargins(20, 10, 20, 10)
+        panel_layout.addWidget(self._source_panel)
+        main_layout.addLayout(panel_layout)
 
         # 2. Stacked Content Area
         self._stack = QStackedWidget()
