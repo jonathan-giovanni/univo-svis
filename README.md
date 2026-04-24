@@ -10,7 +10,7 @@ This is a professional computer vision application designed to enforce safety co
 - A standard Python Virtual Environment (`venv`)
 - Core dependencies: `PySide6`, `ultralytics`, `opencv-python`
 - The custom local vest model weights must be placed at `models/custom/best.pt`
-- *(Optional)* A Roboflow API key configured as `ROBOFLOW_API_KEY` in your environment (if relying on the Roboflow API model instead of local weights)
+- *(Optional)* A Roboflow API key configured as `ROBOFLOW_API_KEY` in your environment (if relying on the Roboflow Serverless model instead of local weights)
 
 ## Setup Steps
 1. **Clone the repository and enter the directory**:
@@ -29,8 +29,8 @@ This is a professional computer vision application designed to enforce safety co
    ```
 4. **Place the vest model**:
    Ensure your local student-trained weights file is placed at: `models/custom/best.pt`
-5. **Set up API Fallback (Optional)**:
-   If you wish to use the API mode, set your key:
+5. **Set up Serverless Fallback (Optional)**:
+   If you wish to use the Roboflow Serverless mode, set your key:
    ```bash
    export ROBOFLOW_API_KEY="your_api_key_here"
    ```
@@ -45,7 +45,7 @@ python scripts/run_dev.py
 ## How to use the app
 1. **Choose your Vest Model Source** in the top navigation panel:
    - **Local Model**: Uses your provided `best.pt` local weights.
-   - **Roboflow API**: Connects securely to the Cloud-hosted version.
+   - **Roboflow Serverless**: Connects securely to the Cloud-hosted serverless inference engine via `inference-sdk`.
 2. Select **Image Analysis** or **Live Monitor** from the Home screen.
 3. Once in the workspace, use the **File** menu to **Open Image**, **Open Video**, or **Open Webcam**.
 4. Adjust the confidence and threshold sliders if necessary.
@@ -57,4 +57,4 @@ This application strictly adheres to a robust Dual-Model paradigm. It pairs a fo
 
 For the vest detector, you can dynamically toggle between two sources in the UI:
 - **Local Model**: A student-trained YOLOv11 checkpoint directly integrated via local inference (highly recommended for performance). 
-- **Roboflow API Mode**: Remote inference tied to the exact underlying dataset project (`safety-vest-data-yolo`, version `1`).
+- **Roboflow Serverless Mode**: Remote serverless inference via `inference-sdk` tied to the exact underlying dataset project (`safety-vest-data-yolo`, version `1`).

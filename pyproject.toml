@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-roboflow = ["roboflow>=1.0"]
+roboflow = ["inference-sdk>=0.9.0"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

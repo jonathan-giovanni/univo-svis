@@ -51,18 +51,19 @@ class DualModelDetector:
         elif mode == "api":
             if self._resolver.can_use_api:
                 if self._vest_model_api is None:
-                    logger.info("Initializing Vest Model (API via Roboflow)")
+                    logger.info("Initializing Vest Model (API via Roboflow Serverless)")
                     try:
-                        from roboflow import Roboflow
-                        rf = Roboflow(api_key=self._resolver._api_key)
-                        project = rf.workspace(self._resolver._workspace).project(self._resolver._project)
-                        self._vest_model_api = project.version(self._resolver._version).model
+                        from inference_sdk import InferenceHTTPClient
+                        self._vest_model_api = InferenceHTTPClient(
+                            api_url="https://serverless.roboflow.com",
+                            api_key=self._resolver._api_key
+                        )
                         self._vest_mode = "api"
                     except ImportError:
-                        logger.error("Roboflow package not installed. API fallback disabled.")
+                        logger.error("inference-sdk package not installed. Serverless fallback disabled.")
                         self._vest_mode = "api_error"
                     except Exception as e:
-                        logger.error("Failed to initialize Roboflow API: %s", e)
+                        logger.error("Failed to initialize Roboflow Serverless: %s", e)
                         self._vest_mode = "api_error"
                 else:
                     self._vest_mode = "api"
@@ -142,18 +143,25 @@ class DualModelDetector:
         return detections
 
     def _detect_vests_api(self, image: np.ndarray, conf: float) -> list[Detection]:
-        """Inference using Roboflow API."""
+        """Inference using Roboflow Serverless API."""
         try:
-            prediction = self._vest_model_api.predict(image, confidence=conf).json()
+            model_id = f"{self._resolver._project}/{self._resolver._version}"
+            prediction = self._vest_model_api.infer(image, model_id=model_id)
+            
             detections = []
-            for pred in prediction["predictions"]:
+            if isinstance(prediction, list):
+                prediction = prediction[0]
+                
+            for pred in prediction.get("predictions", []):
+                if pred["confidence"] < conf:
+                    continue
                 # Roboflow returns x, y center, width, height
                 x, y, w, h = pred["x"], pred["y"], pred["width"], pred["height"]
                 x1, y1 = x - w / 2, y - h / 2
                 x2, y2 = x + w / 2, y + h / 2
                 detections.append(
                     Detection(
-                        class_id=pred["class_id"],
+                        class_id=str(pred.get("class_id", "0")),
                         class_name="safety_vest",
                         confidence=pred["confidence"],
                         bbox=BBox(x1, y1, x2, y2),
@@ -161,5 +169,5 @@ class DualModelDetector:
                 )
             return detections
         except Exception as e:
-            logger.error("Roboflow API inference failed: %s", e)
+            logger.error("Roboflow Serverless API inference failed: %s", e)
             return []

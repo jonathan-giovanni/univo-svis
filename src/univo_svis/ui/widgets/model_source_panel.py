@@ -56,8 +56,8 @@ class ModelSourcePanel(QFrame):
         self._combo = QComboBox()
         self._combo.setFont(QFont("Segoe UI", 10))
         self._combo.addItem("Local Model", "local")
-        self._combo.addItem("Roboflow API", "api")
-        self._combo.setMinimumWidth(150)
+        self._combo.addItem("Roboflow Serverless", "api")
+        self._combo.setMinimumWidth(180)
         
         # Set initial combo state based on detector
         idx = self._combo.findData(self._detector.vest_mode)
@@ -116,10 +116,11 @@ class ModelSourcePanel(QFrame):
                 text += "<span style='color: #F44336; font-weight: bold;'>Status: ERROR - Weights not found</span>"
         
         elif mode in ("api", "api_error"):
-            text += "Mode: Roboflow API\n"
-            text += f"Workspace: {self._resolver._workspace} | Project: {self._resolver._project} | Version: {self._resolver._version}\n"
+            text += "Mode: Roboflow Serverless\n"
+            text += "API URL: https://serverless.roboflow.com\n"
+            text += f"Model ID: {self._resolver._project}/{self._resolver._version}\n"
             url = f"https://app.roboflow.com/{self._resolver._workspace}/{self._resolver._project}/{self._resolver._version}"
-            text += f"URL: {url}\n"
+            text += f"Project URL: {url}\n"
             
             if mode == "api":
                  text += "<span style='color: #FFC107; font-weight: bold;'>Status: READY (API Key Configured)</span>"

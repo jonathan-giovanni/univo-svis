@@ -5,8 +5,8 @@ opencv-python>=4.8
 PyYAML>=6.0
 pyqtdarktheme>=0.1.6
 
-# Optional: Roboflow API fallback for vest model
-# roboflow>=1.0
+# API fallback for vest model
+inference-sdk>=0.9.0
 
 # Development
 pytest>=7.0
