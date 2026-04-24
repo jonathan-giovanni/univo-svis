@@ -51,9 +51,13 @@ python scripts/run_dev.py
 5. In Image mode: Click **Process** to trigger detection and see the detailed analysis.
 6. In Live mode: Read the real-time compliance tallies directly from the console. You can **Pause**, **Record**, and **Capture** streams interactively.
 
-## Final Model Source Explanation
+## Model Origins & Training
 This application strictly adheres to a robust Dual-Model paradigm. It pairs a foundational Ultralytics YOLOv11 person detector (`yolo11n.pt`) alongside a specialized Safety Vest detector. 
 
+**Dataset & Training Details:**
+- **Custom Dataset**: The safety vest images were manually collected, annotated, and hosted by Jonathan (project creator) on Roboflow: [Safety Vest Data YOLO](https://app.roboflow.com/jonathans-workspace-zetah/safety-vest-data-yolo/models/safety-vest-data-yolo/1).
+- **Hardware**: The `best.pt` vest model was trained locally on a **MacBook Pro M1 (Apple Silicon / MPS)** using YOLOv11 for 50 epochs.
+
 For the vest detector, you can dynamically toggle between two sources in the UI:
-- **Local Model**: A student-trained YOLOv11 checkpoint directly integrated via local inference (highly recommended for performance). 
+- **Local Model**: The student-trained YOLOv11 checkpoint directly integrated via local inference (highly recommended for performance). 
 - **Roboflow Serverless Mode**: Remote serverless inference via `inference-sdk` tied to the exact underlying dataset project (`safety-vest-data-yolo`, version `1`).
