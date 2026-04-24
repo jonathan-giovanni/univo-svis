@@ -74,9 +74,11 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# Model weights (tracked via .gitkeep only)
+# Model weights (tracked via .gitkeep only, EXCEPT pre-bundled models for Plug-and-Play)
 models/**/*.pt
 !models/**/.gitkeep
+!models/custom/best.pt
+!models/yolo/yolo11n.pt
 
 # Output artifacts
 output/captures/*

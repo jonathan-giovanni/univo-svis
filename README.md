@@ -9,10 +9,11 @@ This is a professional computer vision application designed to enforce safety co
 - Python 3.12+
 - A standard Python Virtual Environment (`venv`)
 - Core dependencies: `PySide6`, `ultralytics`, `opencv-python`
-- The custom local vest model weights must be placed at `models/custom/best.pt`
 - *(Optional)* A Roboflow API key configured as `ROBOFLOW_API_KEY` in your environment (if relying on the Roboflow Serverless model instead of local weights)
 
-## Setup Steps
+## ⚡ Plug-and-Play Setup
+The application comes **Hot Ready / Plug-and-Play**. Both the Person detector (`yolo11n.pt`) and the custom Safety Vest detector (`best.pt`) are **pre-bundled securely** in the repository. You do not need to download or place any model files manually!
+
 1. **Clone the repository and enter the directory**:
    ```bash
    git clone https://github.com/jonathan-giovanni/univo-svis.git
@@ -27,9 +28,7 @@ This is a professional computer vision application designed to enforce safety co
    ```bash
    pip install -r requirements.txt
    ```
-4. **Place the vest model**:
-   Ensure your local student-trained weights file is placed at: `models/custom/best.pt`
-5. **Set up Serverless Fallback (Optional)**:
+4. **Set up Serverless Fallback (Optional)**:
    If you wish to use the Roboflow Serverless mode, set your key:
    ```bash
    export ROBOFLOW_API_KEY="your_api_key_here"
